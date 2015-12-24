@@ -48,7 +48,7 @@ public class HttpSolver {
 					switch (splitResult[0]) {
 						case "If-Modified-Since":
 								httpMessage.If_Modified_Since = true;
-								httpMessage.If_Modified_SinceString = splitResult[1];
+								httpMessage.If_Modified_SinceString = splitResult[1].trim();
 								break;
 						case "":
 								new GetDisk(httpMessage).work(out);

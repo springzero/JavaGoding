@@ -1,5 +1,6 @@
 package httpServer;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Files;
@@ -33,6 +34,25 @@ public class GetDisk {
 			} catch(IOException e) {
 				e.printStackTrace();
 			}
+			return;
+		}
+		File f = new File(path.toUri());
+		System.out.println("lastModified:" + f.lastModified());
+		if(httpMessage.If_Modified_Since) {
+			String ladtModifiedTemp = Long.toString(f.lastModified());
+			System.out.println(ladtModifiedTemp + "ladtModifiedTemp");
+			System.out.println(httpMessage.If_Modified_SinceString + "If_Modified_SinceString");
+			System.out.println(httpMessage.If_Modified_SinceString.equals(ladtModifiedTemp));
+			if(httpMessage.If_Modified_SinceString.equals(ladtModifiedTemp)) {
+				result.append("HTTP/1.1 304 Not Modified\r\n");
+				result.append("\r\n");
+				try {
+					out.write(result.toString().getBytes());
+					out.flush();
+				} catch(IOException e) {
+					e.printStackTrace();
+				}
+			}
 		}
 		
 		byte[] fileContents = null;
@@ -44,12 +64,14 @@ public class GetDisk {
 		
 		if(fileContents != null) {
 			result.append("HTTP/1.1 200 OK\r\n");
+			result.append("Cache-Control: no-cache\r\n");
+			result.append("Content-Length:" + fileContents.length+"\r\n");
 			if(httpMessage.targetFile.endsWith("html")) {
 				result.append("Content-Type: text/html; charset=utf-8\r\n");
 			} else if(httpMessage.targetFile.endsWith("jpg")) {
 				result.append("Content-Type: image/jpeg\r\n");
 			}
-			result.append("Keep-Alive: -1\r\n");
+			result.append("Last-Modified:  " +  f.lastModified() +"\r\n");
 			result.append("\r\n");
 			try {
 				out.write(result.toString().getBytes());
