@@ -1,9 +1,11 @@
-package httpServer;
+package com.springzero.httpserver;
 
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.util.Scanner;
+
+import com.springzero.handler.ResponseHandler;
 
 /**
  * @author springzero E-mail: 464150147@qq.com
@@ -34,7 +36,7 @@ public class HttpSolver {
 				if(input.startsWith("GET") || input.startsWith("get")) {	//input= "GET /servlet/default.jsp HTTP/1.1"
 					splitResult = input.split(new String(" "));
 					if(!splitResult[2].equals("HTTP/1.1")) {
-						new BadRequest().work(out);
+						new ResponseHandler(out).send_400_status();
 						incomingSocket.close();
 						break;
 					}
@@ -51,7 +53,7 @@ public class HttpSolver {
 								httpMessage.If_Modified_SinceString = splitResult[1].trim();
 								break;
 						case "":
-								new GetDisk(httpMessage).work(out);
+								new GetDisk(httpMessage,out).work();
 								incomingSocket.close();
 								break;
 						default:

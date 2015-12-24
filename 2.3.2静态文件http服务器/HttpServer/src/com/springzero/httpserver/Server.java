@@ -1,4 +1,4 @@
-package httpServer;
+package com.springzero.httpserver;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -13,6 +13,9 @@ import javax.xml.parsers.SAXParserFactory;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
+
+import com.springzero.handler.MyXmlHandler;
+import com.springzero.handler.RequestHandler;
 
 import sun.net.www.protocol.gopher.Handler;
 
@@ -33,10 +36,13 @@ public class Server {
 		running = false;
 		SAXParserFactory saxPF = SAXParserFactory.newInstance();
 		SAXParser saxParser;
+		MyXmlHandler myXmlHandler = new MyXmlHandler();
 		try {
 			InputStream in = new FileInputStream("server.xml");
 			saxParser = saxPF.newSAXParser();
-			saxParser.parse(in, new Handler());
+			saxParser.parse(in, myXmlHandler);
+			this.port = myXmlHandler.getPort();
+			this.root = myXmlHandler.getRoot();
 		} catch(FileNotFoundException e) {
 			System.out.println("server.xml not find");
 			e.printStackTrace();
@@ -58,7 +64,7 @@ public class Server {
 		while(running) {
 			try {
 				Socket incomingSocket = serverSocket.accept();
-				new Thread(new requestHandler(incomingSocket, root)).start();
+				new Thread(new RequestHandler(incomingSocket, root)).start();
 				num++;
 			} catch(IOException e) {
 				e.printStackTrace();
@@ -68,62 +74,8 @@ public class Server {
 		System.out.println("System is down");
 	}
 	
-	private class Handler extends DefaultHandler {
-		private boolean isPort;
-		private boolean isRoot;
-		
-		public Handler(){
-			isPort = false;
-			isRoot = false;
-		}
-		
-		@Override
-		public void characters(char[] ch, int start, int length) throws SAXException {
-			super.characters(ch, start, length);
-			String temp = new String(ch,start,length);
-			if(isPort) {
-				port = Integer.parseInt(temp);
-				isPort = false;
-			} else if(isRoot) {
-				root = temp;
-				isRoot = false;
-			}
-		};
-		
-		@Override
-		public void startElement(String uri, String localName, String qName,
-				Attributes attributes) throws SAXException {
-			super.startElement(uri, localName, qName, attributes);
-			if(qName.equals("port")) {
-				isPort = true;
-			} else if(qName.equals("root")) {
-				isRoot = true;
-			} else if(qName.equals("server")) {
-				//待定，因为没有什么要处理的，小不和谐的样子
-			} else {
-				System.out.println("errot xml element");
-			}
-		}
-		
-	}
-	
 	public void shutDown() {
 		running = false;
 	}
 	
-	private class requestHandler implements Runnable {
-		Socket incomingSocket;
-		String root;
-		
-		public requestHandler(Socket incomingSocket, String root) {
-			this.incomingSocket = incomingSocket;
-			this.root = root;
-		}
-		
-		@Override
-		public void run() {
-			new HttpSolver(incomingSocket,root).serverDoing();;
-		}
-	}
-
 }
