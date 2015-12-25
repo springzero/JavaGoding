@@ -27,7 +27,7 @@ import sun.net.www.protocol.gopher.Handler;
  * @version 创建时间：2015年12月23日 下午12:48:37
  * 类说明
  */
-public class Server {
+public class BioServer {
 	private int requestNum;
 	private int port;
 	private boolean running;
@@ -35,7 +35,11 @@ public class Server {
 	private ServerSocket serverSocket;
 	private ThreadPoolExecutor  threadPool;
 	
-	public Server(){
+	public BioServer(){
+		serverSystemInit();
+	}
+	
+	public void serverSystemInit() {
 		requestNum = 0;
 		running = false;
 		SAXParserFactory saxPF = SAXParserFactory.newInstance();
@@ -56,7 +60,6 @@ public class Server {
 			System.out.println("parse server.xml error");
 			e.printStackTrace();
 		}
-		
 	}
 	
 	public void serverStart() {

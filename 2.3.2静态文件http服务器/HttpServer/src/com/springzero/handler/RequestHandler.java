@@ -1,6 +1,8 @@
 package com.springzero.handler;
 
+import java.io.IOException;
 import java.net.Socket;
+import java.nio.channels.SelectionKey;
 
 import com.springzero.httpserver.HttpSolver;
 
@@ -10,16 +12,34 @@ import com.springzero.httpserver.HttpSolver;
  * 类说明
  */
 public class RequestHandler implements Runnable {
-	Socket incomingSocket;
-	String root;
+	private Socket incomingSocket;
+	private SelectionKey key;
+	private String root;
+	private boolean isNio = false;
 
 	public RequestHandler(Socket incomingSocket, String root) {
 		this.incomingSocket = incomingSocket;
 		this.root = root;
 	}
 
+	public RequestHandler(SelectionKey key,String root) {
+		this.key = key;
+		this.root = root;
+		this.isNio = true;
+	}
+	
 	@Override
 	public void run() {
-		new HttpSolver(incomingSocket,root).server();
+		if(isNio) {
+			try {
+				new HttpSolver(key, root).serverOfNio();
+			} catch (IOException e) {
+				System.out.println("Nio server error");
+				e.printStackTrace();
+			}
+		} else {
+			new HttpSolver(incomingSocket,root).server();
+		}
+		
 	}
 }

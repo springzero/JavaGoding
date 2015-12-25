@@ -3,6 +3,10 @@ package com.springzero.httpserver;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.nio.ByteBuffer;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.SocketChannel;
+import java.util.ArrayList;
 import java.util.Scanner;
 
 import com.springzero.handler.ResponseHandler;
@@ -13,14 +17,84 @@ import com.springzero.handler.ResponseHandler;
  * 类说明
  */
 public class HttpSolver {
-	Socket incomingSocket;
-	String root;
+	private Socket incomingSocket;
+	private SelectionKey key;
+	private HttpMessage httpMessage = new HttpMessage();
+	private ByteBuffer buf = ByteBuffer.allocate(512);;
 	
 	public HttpSolver(Socket incomingSocket, String root) {
 		this.incomingSocket = incomingSocket;
-		this.root = root;
+		httpMessage.root = root;
 	}
 	
+	public HttpSolver(SelectionKey key, String root) {
+		this.key = key;
+		httpMessage.root = root;
+	}
+	
+	/**
+	 * Nio server
+	 * @throws IOException 
+	 */
+	public void serverOfNio() throws IOException {
+		this.buf.clear();
+		SocketChannel channel = (SocketChannel) key.channel();
+		int count = channel.read(buf);
+		
+		if(count == -1) {
+			key.channel().close();
+			key.cancel();
+			return;
+		}
+		String inputTemp = new String(this.buf.array()).trim(); 
+		System.out.println("您的输入为：" + inputTemp);
+		inputTemp = inputTemp + "\r\n" + "" +"\r\n";
+		String[] inputArrayTemp = inputTemp.split("\r\n");
+		int length = inputArrayTemp.length+1;
+		String[] inputArray = new String[length];
+		for(int i = 0 ; i < length-1; i++) {
+			inputArray[i] = inputArrayTemp[i];
+		}
+		inputArray[length-1] = "";
+		
+		
+		
+		for (String input : inputArray) {
+			String splitResult[] = null;
+			if(input.startsWith("GET") || input.startsWith("get")) {	//input= "GET /servlet/default.jsp HTTP/1.1"
+				splitResult = input.split(new String(" "));
+				if(!splitResult[2].equals("HTTP/1.1")) {
+					new ResponseHandler(channel).send_400_status();
+					incomingSocket.close();
+					break;
+				}
+				if(splitResult[1].equals("/")) {
+					httpMessage.targetFile = "index.html";
+				} else {
+					httpMessage.targetFile = splitResult[1].substring(1,splitResult[1].length()); //这里就是处理链接地址的地方，很显然现在写的太简单了
+				}
+			} else {	//Accept: text/plain; text/html 处理这一类
+				splitResult = input.split(new String(":"));
+				switch (splitResult[0]) {
+					case "If-Modified-Since":
+							httpMessage.If_Modified_Since = true;
+							httpMessage.If_Modified_SinceString = splitResult[1].trim();
+							break;
+					case "":
+							new GetDisk(httpMessage,channel).work();
+							channel.close();
+							break;
+					default:
+							break;
+				}
+			}
+		}
+		
+	}
+	
+	/**
+	 * 默认 BIO server
+	 */
 	public void server() {
 		Scanner in = null;
 		OutputStream out = null;
@@ -28,8 +102,6 @@ public class HttpSolver {
 		try {
 			in = new Scanner(incomingSocket.getInputStream());
 			out = incomingSocket.getOutputStream();
-			HttpMessage httpMessage = new HttpMessage();
-			httpMessage.root = root;
 			while(in.hasNextLine()) {
 				String input = in.nextLine();
 				String splitResult[] = null;

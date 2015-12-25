@@ -3,6 +3,7 @@ package com.springzero.httpserver;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.channels.SocketChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -21,6 +22,12 @@ public class GetDisk {
 	
 	public GetDisk(HttpMessage httpMessage, OutputStream out) {
 		response = new ResponseHandler(out);
+		this.httpMessage = httpMessage;
+		path = Paths.get(this.httpMessage.root, this.httpMessage.targetFile);
+	}
+	
+	public GetDisk(HttpMessage httpMessage, SocketChannel channel) {
+		response = new ResponseHandler(channel);
 		this.httpMessage = httpMessage;
 		path = Paths.get(this.httpMessage.root, this.httpMessage.targetFile);
 	}

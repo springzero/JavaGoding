@@ -7,7 +7,7 @@ package com.springzero.httpserver;
  */
 public class Main {
 	public static void main(String agrs[]) {
-		Server server = new Server();
+		NioServer server = new NioServer();
 		server.serverStart();
 	}
 }
