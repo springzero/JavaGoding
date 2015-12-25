@@ -12,8 +12,14 @@ import org.xml.sax.helpers.DefaultHandler;
 public class MyXmlHandler extends DefaultHandler {
 	private boolean isPort;
 	private boolean isRoot;
+	private boolean isCorePoolSize;
+	private boolean isMaximumPoolSize;
+	private boolean isKeepAliveTime;
 	private int port;
 	private String root;
+	private int corePoolSize;
+	private int maximumPoolSize;
+	private long keepAliveTime;
 	
 	public MyXmlHandler(){
 		isPort = false;
@@ -28,6 +34,18 @@ public class MyXmlHandler extends DefaultHandler {
 		return root;
 	}
 
+	public int getCorePoolSize() {
+		return corePoolSize;
+	}
+
+	public int getMaximumPoolSize() {
+		return maximumPoolSize;
+	}
+
+	public long getKeepAliveTime() {
+		return keepAliveTime;
+	}
+
 	@Override
 	public void characters(char[] ch, int start, int length) throws SAXException {
 		super.characters(ch, start, length);
@@ -38,6 +56,15 @@ public class MyXmlHandler extends DefaultHandler {
 		} else if(isRoot) {
 			root = temp;
 			isRoot = false;
+		} else if(isCorePoolSize) {
+			corePoolSize = Integer.parseInt(temp);
+			isCorePoolSize = false;
+		} else if(isMaximumPoolSize) {
+			maximumPoolSize = Integer.parseInt(temp);
+			isMaximumPoolSize = false;
+		} else if(isKeepAliveTime) {
+			keepAliveTime = Long.parseLong(temp);
+			isKeepAliveTime = false;
 		}
 	};
 	
@@ -49,7 +76,13 @@ public class MyXmlHandler extends DefaultHandler {
 			isPort = true;
 		} else if(qName.equals("root")) {
 			isRoot = true;
-		} else if(qName.equals("server")) {
+		} else if(qName.equals("corePoolSize")) {
+			isCorePoolSize = true;
+		} else if(qName.equals("maximumPoolSize")) {
+			isMaximumPoolSize = true;
+		} else if(qName.equals("keepAliveTime")) {
+			isKeepAliveTime = true;
+		} else if(qName.equals("server") || qName.equals("ThreadPool")) {
 			//待定，因为没有什么要处理的，小不和谐的样子
 		} else {
 			System.out.println("errot xml element");

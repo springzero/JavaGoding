@@ -21,7 +21,7 @@ public class HttpSolver {
 		this.root = root;
 	}
 	
-	public void serverDoing() {
+	public void server() {
 		Scanner in = null;
 		OutputStream out = null;
 		

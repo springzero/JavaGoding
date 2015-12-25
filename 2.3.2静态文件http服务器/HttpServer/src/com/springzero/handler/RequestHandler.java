@@ -20,6 +20,6 @@ public class RequestHandler implements Runnable {
 
 	@Override
 	public void run() {
-		new HttpSolver(incomingSocket,root).serverDoing();
+		new HttpSolver(incomingSocket,root).server();
 	}
 }

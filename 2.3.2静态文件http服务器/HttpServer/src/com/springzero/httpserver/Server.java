@@ -6,6 +6,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
@@ -25,14 +28,15 @@ import sun.net.www.protocol.gopher.Handler;
  * 类说明
  */
 public class Server {
-	private int num;
+	private int requestNum;
 	private int port;
 	private boolean running;
 	private String root;
 	private ServerSocket serverSocket;
+	private ThreadPoolExecutor  threadPool;
 	
 	public Server(){
-		num = 0;
+		requestNum = 0;
 		running = false;
 		SAXParserFactory saxPF = SAXParserFactory.newInstance();
 		SAXParser saxParser;
@@ -43,6 +47,8 @@ public class Server {
 			saxParser.parse(in, myXmlHandler);
 			this.port = myXmlHandler.getPort();
 			this.root = myXmlHandler.getRoot();
+			threadPool = new ThreadPoolExecutor(myXmlHandler.getCorePoolSize(), myXmlHandler.getMaximumPoolSize(),
+					myXmlHandler.getKeepAliveTime(),TimeUnit.SECONDS, new ArrayBlockingQueue<Runnable>(3));
 		} catch(FileNotFoundException e) {
 			System.out.println("server.xml not find");
 			e.printStackTrace();
@@ -50,6 +56,7 @@ public class Server {
 			System.out.println("parse server.xml error");
 			e.printStackTrace();
 		}
+		
 	}
 	
 	public void serverStart() {
@@ -64,12 +71,13 @@ public class Server {
 		while(running) {
 			try {
 				Socket incomingSocket = serverSocket.accept();
-				new Thread(new RequestHandler(incomingSocket, root)).start();
-				num++;
+				//TODO 在这里引进线程池，而不是直接new个线程
+				threadPool.execute(new RequestHandler(incomingSocket,root));  
+				requestNum++;
 			} catch(IOException e) {
 				e.printStackTrace();
 			}
-			System.out.println("System deal " + num + " request");
+			System.out.println("System deal " + requestNum + " request");
 		}
 		System.out.println("System is down");
 	}
