@@ -9,7 +9,7 @@ import com.springzero.httpserver.HttpSolver;
 /**
  * @author springzero E-mail: 464150147@qq.com
  * @version 创建时间：2015年12月24日 下午2:14:54
- * 类说明
+ * 类说明		处理请求
  */
 public class RequestHandler implements Runnable {
 	private Socket incomingSocket;

@@ -10,7 +10,7 @@ import com.springzero.httpserver.HttpMessage;
 /**
  * @author springzero E-mail: 464150147@qq.com
  * @version 创建时间：2015年12月24日 下午2:49:28
- * 类说明
+ * 类说明 	生成响应页面
  */
 public class ResponseHandler {
 	private OutputStream out;
@@ -32,7 +32,6 @@ public class ResponseHandler {
 	public void send_200_status(HttpMessage httpMessage, byte[] fileContents) {
 		result.append("HTTP/1.1 200 OK\r\n");
 		result.append("Cache-Control: no-cache\r\n");
-		//result.append("Content-Length:" + fileContents.length+"\r\n");
 		if(httpMessage.targetFile.endsWith("html")) {
 			result.append("Content-Type: text/html; charset=utf-8\r\n");
 		} else if(httpMessage.targetFile.endsWith("jpg")) {
@@ -40,69 +39,46 @@ public class ResponseHandler {
 		}
 		result.append("Last-Modified:  " + httpMessage.lastModified +"\r\n");
 		result.append("\r\n");
-		if(isNio) {
-			try {
-				System.out.println("channel status:" + channel.isOpen());
-				System.out.println("-----------------------------------------------");
-				System.out.println(result.toString());
-				System.out.println("-----------------------------------------------");
-				System.out.println(fileContents);
-				System.out.println("-----------------------------------------------");
-				channel.write(ByteBuffer.wrap(result.toString().getBytes()));
-				System.out.println("channel status:" + channel.isOpen());
-				channel.write(ByteBuffer.wrap(fileContents));
-			} catch (IOException e) {
-				System.out.println("nio write error");
-				e.printStackTrace();
-			}
-			return;
-		}
-		try {
-			out.write(result.toString().getBytes());
-			out.write(fileContents);
-			out.flush();
-		} catch(IOException e) {
-			e.printStackTrace();
-		}
+		write(isNio,fileContents);
 	}
 	
 	public void send_304_status() {
 		result.append("HTTP/1.1 304 Not Modified\r\n");
 		result.append("\r\n");
-		if(isNio) {
-			try {
-				channel.write(ByteBuffer.wrap(result.toString().getBytes()));
-			} catch(Exception e) {
-				e.printStackTrace();
-			}
-			return;
-		}
-		try {
-			out.write(result.toString().getBytes());
-			out.flush();
-		} catch(IOException e) {
-			e.printStackTrace();
-		}
+		write(isNio,null);
 	}
 	
 	public void send_400_status() {
 		result.append("HTTP/1.1 400 bad request\r\n"
 				+ "Connection: close\r\n");
 		result.append("\r\n");
+		write(isNio,null);
+	}
+	
+	/**
+	 * 发送响应包
+	 * @param isNio	是否为NIO【非阻塞IO】
+	 * @param fileContents	文件内容 若没有请输入null
+	 */
+	public void write(boolean isNio, byte[] fileContents) {
 		if(isNio) {
 			try {
 				channel.write(ByteBuffer.wrap(result.toString().getBytes()));
-			} catch(Exception e) {
+				if(fileContents != null) {
+					channel.write(ByteBuffer.wrap(fileContents));
+				}
+			} catch (IOException e) {
+				System.out.println("nio write error");
 				e.printStackTrace();
 			}
-			return;
-		}
-		try {
-			out.write(result.toString().getBytes());
-			out.flush();
-		} catch(IOException e) {
-			e.printStackTrace();
+		} else {
+			try {
+				out.write(result.toString().getBytes());
+				out.write(fileContents);
+				out.flush();
+			} catch(IOException e) {
+				e.printStackTrace();
+			}
 		}
 	}
-	
 }

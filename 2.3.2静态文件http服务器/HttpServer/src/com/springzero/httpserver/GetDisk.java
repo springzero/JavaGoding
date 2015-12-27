@@ -13,7 +13,7 @@ import com.springzero.handler.ResponseHandler;
 /**
  * @author springzero E-mail: 464150147@qq.com
  * @version 创建时间：2015年12月23日 下午3:38:29
- * 类说明
+ * 类说明		获取服务器文件
  */
 public class GetDisk {
 	private HttpMessage httpMessage;
@@ -37,11 +37,14 @@ public class GetDisk {
 			response.send_400_status();
 			return;
 		}
+		
+		//获取服务器文件时间戳，进行比较
 		File f = new File(path.toUri());
 		httpMessage.lastModified = Long.toString(f.lastModified());
 		if(httpMessage.If_Modified_Since) {
 			if(httpMessage.If_Modified_SinceString.equals(httpMessage.lastModified)) {
 				response.send_304_status();
+				return;
 			}
 		}
 		
@@ -51,7 +54,6 @@ public class GetDisk {
 		} catch(IOException e) {
 			e.printStackTrace();
 		}
-		
 		if(fileContents != null) {
 			response.send_200_status(httpMessage, fileContents);
 		}

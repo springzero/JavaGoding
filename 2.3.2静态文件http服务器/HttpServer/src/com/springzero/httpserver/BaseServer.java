@@ -13,32 +13,25 @@ import java.util.concurrent.TimeUnit;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
-import org.xml.sax.Attributes;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.DefaultHandler;
-
 import com.springzero.handler.MyXmlHandler;
 import com.springzero.handler.RequestHandler;
 
-import sun.net.www.protocol.gopher.Handler;
-
 /**
  * @author springzero E-mail: 464150147@qq.com
- * @version 创建时间：2015年12月23日 下午12:48:37
- * 类说明
+ * @version 创建时间：2015年12月27日 下午10:47:18
+ * 类说明		基础服务类		【默认提供阻塞式服务】
  */
-public class BioServer {
-	private int requestNum;
-	private int port;
-	private boolean running;
-	private String root;
-	private ServerSocket serverSocket;
-	private ThreadPoolExecutor  threadPool;
+public class BaseServer {
+	int requestNum;
+	int port;
+	boolean running;
+	String root;
+	ServerSocket serverSocket;
+	ThreadPoolExecutor  threadPool;
 	
-	public BioServer(){
+	public BaseServer() {
 		serverSystemInit();
 	}
-	
 	public void serverSystemInit() {
 		requestNum = 0;
 		running = false;

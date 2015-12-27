@@ -7,7 +7,7 @@ import org.xml.sax.helpers.DefaultHandler;
 /**
  * @author springzero E-mail: 464150147@qq.com
  * @version 创建时间：2015年12月24日 下午2:18:39
- * 类说明
+ * 类说明		处理server.xml
  */
 public class MyXmlHandler extends DefaultHandler {
 	private boolean isPort;
@@ -16,10 +16,10 @@ public class MyXmlHandler extends DefaultHandler {
 	private boolean isMaximumPoolSize;
 	private boolean isKeepAliveTime;
 	private int port;
-	private String root;
 	private int corePoolSize;
 	private int maximumPoolSize;
 	private long keepAliveTime;
+	private String root;
 	
 	public MyXmlHandler(){
 		isPort = false;
