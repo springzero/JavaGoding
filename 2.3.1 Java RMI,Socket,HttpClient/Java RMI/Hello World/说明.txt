@@ -1,0 +1,3 @@
+编译完后，运行rmic HelloImpl 生成桩HelloImpl_stub.class文件
+运行java HelloImpl，启动服务器。当启动成功时，出现Ready......
+再打开个终端，运行java Hello_RMI_Client，运行客户端，成功时有打印显示。
