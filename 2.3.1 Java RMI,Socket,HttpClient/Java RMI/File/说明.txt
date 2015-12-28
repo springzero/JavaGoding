@@ -1,0 +1,9 @@
+javac *.java 编译所有java文件
+
+rmic FileUtilImpl 生成Stub （jdk1.2后不会生成skeletons服务端辅助对象，估计是整合了）
+
+java -Djava.security.policy=policy.txt FileUtilServer 启动服务器端 (没使用这个参数也成功了，可能是应该是本机测试的原因。参数和安全有关)
+
+java FileUtilClient 127.0.0.1 d:\ROOT\index.html download/index.html （注意最后一个参数要带上文件名称。。。）
+
+试着下载了20M文件，一个请求无压力。
