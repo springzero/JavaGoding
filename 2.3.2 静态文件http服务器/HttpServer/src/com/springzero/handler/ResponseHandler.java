@@ -74,7 +74,9 @@ public class ResponseHandler {
 		} else {
 			try {
 				out.write(result.toString().getBytes());
-				out.write(fileContents);
+				if(fileContents != null) {
+					out.write(fileContents);
+				}
 				out.flush();
 			} catch(IOException e) {
 				e.printStackTrace();

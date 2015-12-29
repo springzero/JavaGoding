@@ -3,8 +3,8 @@
     <port>9090</port>
     <root>d:\ROOT\</root>
     <ThreadPool>
-	    <corePoolSize>2</corePoolSize>
-	    <maximumPoolSize>4</maximumPoolSize>
+	    <corePoolSize>50</corePoolSize>
+	    <maximumPoolSize>55</maximumPoolSize>
 	    <keepAliveTime>3</keepAliveTime>
 	</ThreadPool>
 </server>
