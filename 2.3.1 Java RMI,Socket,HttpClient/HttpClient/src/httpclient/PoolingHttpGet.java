@@ -64,6 +64,7 @@ public class PoolingHttpGet {
 				try {
 					Future<BasicPoolEntry> future = pool.lease(this.target, null);
 					boolean reusable = false;
+					//entry 翻译为入口
 					BasicPoolEntry entry = future.get();
 					try {
 						HttpClientConnection conn = entry.getConnection();
