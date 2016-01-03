@@ -239,6 +239,12 @@ public class ReverseProxy {
 						break;
 					}
 					
+					/*
+					 * 这句方法中有条这样的代码：
+					 * response = responseFactory.newHttpResponse(HttpVersion.HTTP_1_1, 100, context);
+					 * 这里生成的response ，应该和 context.setAttribute(HTTP_OUT_CONN, this.outConn);有关
+					 * 这样就贯通起来
+					 */
 					this.httpService.handleRequest(this.inConn, context);
 					
 					final Boolean keepAlive = (Boolean) context.getAttribute(HTTP_CONN_KEEPALIVE);
