@@ -7,7 +7,7 @@ import java.util.ArrayList;
 /**
  * @author springzero E-mail: 464150147@qq.com
  * @version 创建时间：2016年1月7日 下午10:09:16
- * 类说明
+ * 类说明		我的调用处理器
  */
 public class MyInvocationHandler implements InvocationHandler {
 	private Object target;
