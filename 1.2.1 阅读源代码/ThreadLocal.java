@@ -298,6 +298,10 @@ public class ThreadLocal<T> {
          * == null) mean that the key is no longer referenced, so the
          * entry can be expunged from table.  Such entries are referred to
          * as "stale entries" in the code that follows.
+         * hashmap的入口（Entry）继承了弱引用，通过kay（这里的kay指一个ThreadLocal object）获取入口
+         * 值得注意的是，当key为null时（使用方法entry.get()得到），意味着这个key已经不存在了，这个对应null的入口可以在table中被删除了
+         * 这种入口是过时的
+         * （讲到弱引用，我比较纠结，弱引用的目标是防止内存泄露，为了抵制垃圾回收工作，我也是醉了，可能是场景遭遇太少）
          */
         static class Entry extends WeakReference<ThreadLocal> {
             /** The value associated with this ThreadLocal. */
@@ -311,22 +315,26 @@ public class ThreadLocal<T> {
 
         /**
          * The initial capacity -- MUST be a power of two.
+         * 初始化容量 要求必须为2的多少次方
          */
         private static final int INITIAL_CAPACITY = 16;
 
         /**
          * The table, resized as necessary.
          * table.length MUST always be a power of two.
+         * 一个可以调整大小的表，表的长度必须是2的多少次方
          */
         private Entry[] table;
 
         /**
          * The number of entries in the table.
+         * 表中入口的数量
          */
         private int size = 0;
 
         /**
          * The next size value at which to resize.
+         * 
          */
         private int threshold; // Default to 0
 
@@ -355,6 +363,8 @@ public class ThreadLocal<T> {
          * Construct a new map initially containing (firstKey, firstValue).
          * ThreadLocalMaps are constructed lazily, so we only create
          * one when we have at least one entry to put in it.
+         * 构造方法 需要两个具体的参数来初始化ThreadLocal，object
+         * ThreadLocal的策略是懒汉式的，只要有一个具有entry的ThreadLocal存在就行
          */
         ThreadLocalMap(ThreadLocal firstKey, Object firstValue) {
             table = new Entry[INITIAL_CAPACITY];
@@ -367,6 +377,8 @@ public class ThreadLocal<T> {
         /**
          * Construct a new map including all Inheritable ThreadLocals
          * from given parent map. Called only by createInheritedMap.
+         *根据父类继承过来的ThreadLocal map构造新的map
+         *该方法为私有
          *
          * @param parentMap the map associated with parent thread.
          */
@@ -399,6 +411,8 @@ public class ThreadLocal<T> {
          * key. It otherwise relays to getEntryAfterMiss.  This is
          * designed to maximize performance for direct hits, in part
          * by making this method readily inlinable.
+         *通过key获取（入口）entry。
+         *这个方法直接通过现有的key搜寻entry，如果不存在，则调用getEntryAfterMiss方法
          *
          * @param  key the thread local object
          * @return the entry associated with key, or null if no such
@@ -415,7 +429,7 @@ public class ThreadLocal<T> {
         /**
          * Version of getEntry method for use when key is not found in
          * its direct hash slot.
-         *
+         *一系列的判断，最终保障是新建一个entry
          * @param  key the thread local object
          * @param  i the table index for key's hash code
          * @param  e the entry at table[i]
@@ -450,12 +464,13 @@ public class ThreadLocal<T> {
             // least as common to use set() to create new entries as
             // it is to replace existing ones, in which case, a fast
             // path would fail more often than not.
+        	//我们不使用get去快速定位，因为当前操作可能是要新建一个entry，而不是替换已有的
 
             Entry[] tab = table;
             int len = tab.length;
             int i = key.threadLocalHashCode & (len-1);
 
-            for (Entry e = tab[i];
+            for (Entry e = tab[i];					//看这里，表示代码有点6，还好偶是玩过acm的。不知道nextIndex具体是按什么规律next的
                  e != null;
                  e = tab[i = nextIndex(i, len)]) {
                 ThreadLocal k = e.get();
@@ -465,7 +480,7 @@ public class ThreadLocal<T> {
                     return;
                 }
 
-                if (k == null) {
+                if (k == null) {					//这里看上去 是找到一个k==null的entry（无效的），直接替换成新的（废物利用。。。）
                     replaceStaleEntry(key, value, i);
                     return;
                 }
@@ -489,7 +504,7 @@ public class ThreadLocal<T> {
                  e = tab[i = nextIndex(i, len)]) {
                 if (e.get() == key) {
                     e.clear();
-                    expungeStaleEntry(i);
+                    expungeStaleEntry(i);		//跟随方法你会发现目的是 table[i]=null 且后面的table向前移动，保持队伍整齐紧凑
                     return;
                 }
             }
@@ -508,7 +523,7 @@ public class ThreadLocal<T> {
          * @param  key the key
          * @param  value the value to be associated with key
          * @param  staleSlot index of the first stale entry encountered while
-         *         searching for key.
+         *         searching for key.		//过时entry对应在table中的索引
          */
         private void replaceStaleEntry(ThreadLocal key, Object value,
                                        int staleSlot) {
@@ -574,7 +589,7 @@ public class ThreadLocal<T> {
          * any other stale entries encountered before the trailing null.  See
          * Knuth, Section 6.4
          *
-         * @param staleSlot index of slot known to have null key
+         * @param staleSlot index of slot known to have null key  key为null的entry，对应在table上的索引值
          * @return the index of the next null slot after staleSlot
          * (all between staleSlot and this slot will have been checked
          * for expunging).
@@ -638,6 +653,7 @@ public class ThreadLocal<T> {
          * seems to work well.)
          *
          * @return true if any stale entries have been removed.
+         * 如果进行了清除操作，返回true
          */
         private boolean cleanSomeSlots(int i, int n) {
             boolean removed = false;
@@ -659,17 +675,19 @@ public class ThreadLocal<T> {
          * Re-pack and/or re-size the table. First scan the entire
          * table removing stale entries. If this doesn't sufficiently
          * shrink the size of the table, double the table size.
+         * 
          */
         private void rehash() {
             expungeStaleEntries();
 
-            // Use lower threshold for doubling to avoid hysteresis
+            // Use lower threshold for doubling to avoid hysteresis //如果空闲的容量较少（不足1/4）我们将容量翻倍
             if (size >= threshold - threshold / 4)
                 resize();
         }
 
         /**
          * Double the capacity of the table.
+         * table容量翻倍
          */
         private void resize() {
             Entry[] oldTab = table;
@@ -701,6 +719,7 @@ public class ThreadLocal<T> {
 
         /**
          * Expunge all stale entries in the table.
+         * 抹去所有过时的entry
          */
         private void expungeStaleEntries() {
             Entry[] tab = table;
