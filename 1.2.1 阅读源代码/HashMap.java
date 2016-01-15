@@ -161,12 +161,14 @@ public class HashMap<K,V>
 
     /**
      * The number of key-value mappings contained in this map.
+     * map中实际键值对的数量
      */
     transient int size;
 
     /**
      * The next size value at which to resize (capacity * load factor).
      * @serial
+     * 某种阈值，和size有密切关系
      */
     int threshold;
 
@@ -183,6 +185,8 @@ public class HashMap<K,V>
      * the HashMap or otherwise modify its internal structure (e.g.,
      * rehash).  This field is used to make iterators on Collection-views of
      * the HashMap fail-fast.  (See ConcurrentModificationException).
+     * 无论删除还是增加， modCount的值都在增大
+     * 记录的是hashMap中修改的次数（除了判断ConcurrentModificationException，暂时还没有发现作用）
      */
     transient int modCount;
 
@@ -512,7 +516,7 @@ public class HashMap<K,V>
             if (e.hash == hash && ((k = e.key) == key || key.equals(k))) { //hash值相等且Object k也相等
                 V oldValue = e.value;
                 e.value = value;
-                e.recordAccess(this);	//看上去像记录功能，而且还返回了oldValue 这么古怪。
+                e.recordAccess(this);	//看上去像记录功能，替换后，返回了oldValue
                 return oldValue;
             }
         }
@@ -655,6 +659,7 @@ public class HashMap<K,V>
          * if the keys to be added overlap with the keys already in this map.
          * By using the conservative calculation, we subject ourself
          * to at most one extra resize.
+         * 如果对当前map来说，特定的map的大小不小于当前map阈值，我们需要增大当前map
          */
         if (numKeysToBeAdded > threshold) {
             int targetCapacity = (int)(numKeysToBeAdded / loadFactor + 1);
@@ -667,18 +672,20 @@ public class HashMap<K,V>
                 resize(newCapacity);
         }
 
-        for (Map.Entry<? extends K, ? extends V> e : m.entrySet())
+        for (Map.Entry<? extends K, ? extends V> e : m.entrySet())		//遍历下，一个个扔进去
             put(e.getKey(), e.getValue());
     }
 
     /**
      * Removes the mapping for the specified key from this map if present.
+     *根据特定的key删除当前的map对应的entry
      *
      * @param  key key whose mapping is to be removed from the map
      * @return the previous value associated with <tt>key</tt>, or
      *         <tt>null</tt> if there was no mapping for <tt>key</tt>.
      *         (A <tt>null</tt> return can also indicate that the map
      *         previously associated <tt>null</tt> with <tt>key</tt>.)
+     *         总是会有些万万没想的心情，删除成功会返回相应的旧的value
      */
     public V remove(Object key) {
         Entry<K,V> e = removeEntryForKey(key);
@@ -689,6 +696,8 @@ public class HashMap<K,V>
      * Removes and returns the entry associated with the specified key
      * in the HashMap.  Returns null if the HashMap contains no mapping
      * for this key.
+     * 根据特定的key删除当前HashMap中的对应的entry
+     * 如果不存在这个key 返回null
      */
     final Entry<K,V> removeEntryForKey(Object key) {
         int hash = (key == null) ? 0 : hash(key);
@@ -720,6 +729,7 @@ public class HashMap<K,V>
     /**
      * Special version of remove for EntrySet using {@code Map.Entry.equals()}
      * for matching.
+     * 删除指定entry
      */
     final Entry<K,V> removeMapping(Object o) {
         if (!(o instanceof Map.Entry))
@@ -798,8 +808,9 @@ public class HashMap<K,V>
     /**
      * Returns a shallow copy of this <tt>HashMap</tt> instance: the keys and
      * values themselves are not cloned.
-     *
-     * @return a shallow copy of this map
+     *返回HashMap实例的复制版本，但是keys and 值  本身（themselves）不会被复制
+     *（即复制版本和原版本使用的keys和值是同一个（同一个引用地址），如keys，values不是基本类型，为class且有成员变量）
+     * @return a shallow copy of this map 
      */
     public Object clone() {
         HashMap<K,V> result = null;
@@ -818,7 +829,9 @@ public class HashMap<K,V>
         return result;
     }
 
-    static class Entry<K,V> implements Map.Entry<K,V> {
+    //在构建一个模型类 我们需要实现常用的方法hashcode,toString,equals,构造函数，再加成员变量的有关的方法
+    
+    static class Entry<K,V> implements Map.Entry<K,V> {	
         final K key;
         V value;
         Entry<K,V> next;
@@ -876,6 +889,7 @@ public class HashMap<K,V>
          * This method is invoked whenever the value in an entry is
          * overwritten by an invocation of put(k,v) for a key k that's already
          * in the HashMap.
+         * 每当table中的有条entry因put方法，覆盖了old value，该方法就会被调用
          */
         void recordAccess(HashMap<K,V> m) {
         }
@@ -883,6 +897,7 @@ public class HashMap<K,V>
         /**
          * This method is invoked whenever the entry is
          * removed from the table.
+         * 每当在table中删除了entry，该方法就会被调用
          */
         void recordRemoval(HashMap<K,V> m) {
         }
@@ -892,8 +907,11 @@ public class HashMap<K,V>
      * Adds a new entry with the specified key, value and hash code to
      * the specified bucket.  It is the responsibility of this
      * method to resize the table if appropriate.
+     *使用特定的key、value、hash新加一个Entry
+     *在添加之前，我们判断下应不应该resize下table
      *
      * Subclass overrides this to alter the behavior of put method.
+     * 这里提示子类可以重写覆盖该方法（其实其他有不少方法也可以覆盖。。，这里特意提到）
      */
     void addEntry(int hash, K key, V value, int bucketIndex) {
         if ((size >= threshold) && (null != table[bucketIndex])) {
@@ -914,11 +932,18 @@ public class HashMap<K,V>
      * clone, and readObject.
      */
     void createEntry(int hash, K key, V value, int bucketIndex) {
-        Entry<K,V> e = table[bucketIndex];
+        Entry<K,V> e = table[bucketIndex];			//看到这里我才知道bucketIndex是个什么东西。。。叫它准索引好了。原谅我才疏学浅
         table[bucketIndex] = new Entry<>(hash, key, value, e);
-        size++;
+        size++;			//map中的键值对数量+1
     }
-
+    
+    //private抽象类
+    /**
+     * Iterator接口，有人称之为一个典型的设计模式（Iterator模式，至于模式是个什么鬼，大家接触多了就会明白。。。）
+     * Iterator模式用于遍历集合类的标准访问方法抽象方法有：hasNext，next，remove
+     * 将访问逻辑从不同的集合类中抽象出来，避免了暴露集合内部的结构。一种逻辑简单又方便
+     * 
+     */
     private abstract class HashIterator<E> implements Iterator<E> {
         Entry<K,V> next;        // next entry to return
         int expectedModCount;   // For fast-fail
@@ -929,7 +954,7 @@ public class HashMap<K,V>
             expectedModCount = modCount;
             if (size > 0) { // advance to first entry
                 Entry[] t = table;
-                while (index < t.length && (next = t[index++]) == null)
+                while (index < t.length && (next = t[index++]) == null)		//作用是初始化next，知道next不为null 跳出
                     ;
             }
         }
@@ -939,7 +964,7 @@ public class HashMap<K,V>
         }
 
         final Entry<K,V> nextEntry() {
-            if (modCount != expectedModCount)
+            if (modCount != expectedModCount)			//如果这两值不相等，我们抛出并发修改异常（这里应该是jdk作者考虑到某些情况下，这两个值不一样会出问题）
                 throw new ConcurrentModificationException();
             Entry<K,V> e = next;
             if (e == null)
@@ -954,25 +979,25 @@ public class HashMap<K,V>
             return e;
         }
 
-        public void remove() {
-            if (current == null)
+        public void remove() {	//注意这个remove可是没参数的
+            if (current == null)		//current=null  抛非法状态异常（什么时候current=null 我看不出来，为null肯定影响下面的操作。）
                 throw new IllegalStateException();
             if (modCount != expectedModCount)
                 throw new ConcurrentModificationException();
             Object k = current.key;
-            current = null;
+            current = null;		//连续remove。。。可以做到。。。
             HashMap.this.removeEntryForKey(k);
             expectedModCount = modCount;
         }
     }
 
-    private final class ValueIterator extends HashIterator<V> {
+    private final class ValueIterator extends HashIterator<V> {	//value遍历
         public V next() {
             return nextEntry().value;
         }
     }
 
-    private final class KeyIterator extends HashIterator<K> {
+    private final class KeyIterator extends HashIterator<K> {	//key遍历
         public K next() {
             return nextEntry().getKey();
         }
@@ -1012,6 +1037,9 @@ public class HashMap<K,V>
      * <tt>removeAll</tt>, <tt>retainAll</tt>, and <tt>clear</tt>
      * operations.  It does not support the <tt>add</tt> or <tt>addAll</tt>
      * operations.
+     * 返回一个key的Set view（该Set view由map中key组成）
+     * 该Set view受当前map的映射支持（即两者使用一模一样的引用）所以map中的改变会直接体现 在Set view中
+     * 同下public Collection<V> values()
      */
     public Set<K> keySet() {
         Set<K> ks = keySet;
@@ -1048,13 +1076,19 @@ public class HashMap<K,V>
      * <tt>Collection.remove</tt>, <tt>removeAll</tt>,
      * <tt>retainAll</tt> and <tt>clear</tt> operations.  It does not
      * support the <tt>add</tt> or <tt>addAll</tt> operations.
+     * 返回一个value的集合View（该集合由当前map中的所有value组成）
+     * 该集合受当前map的映射支持（即两者使用一模一样的引用）所以map中的改变会直接体现 在集合中
+     * 如果一个迭代集合正在遍历，而map发生了改变，（除非是迭代器自己的remove方法）
+     * 那么迭代的结果是不确定的（这种情况我们肯定是不允许出现的，有违唯一性）
+     * 当从通过（Iterator.remove，Collection.remove，removeAll，retainAll等）删除map中相应的映射，
+     * 集合是支持元素的移除的。不支持add ，addAll
      */
     public Collection<V> values() {
         Collection<V> vs = values;
         return (vs != null ? vs : (values = new Values()));
     }
 
-    private final class Values extends AbstractCollection<V> {
+    private final class Values extends AbstractCollection<V> {	//values集合		内部私有类
         public Iterator<V> iterator() {
             return newValueIterator();
         }
@@ -1082,6 +1116,7 @@ public class HashMap<K,V>
      * <tt>Set.remove</tt>, <tt>removeAll</tt>, <tt>retainAll</tt> and
      * <tt>clear</tt> operations.  It does not support the
      * <tt>add</tt> or <tt>addAll</tt> operations.
+     *Entry的Set view
      *
      * @return a set view of the mappings contained in this map
      */
@@ -1119,6 +1154,7 @@ public class HashMap<K,V>
     /**
      * Save the state of the <tt>HashMap</tt> instance to a stream (i.e.,
      * serialize it).
+     * 保存HashMap的状态到流（即序列化）
      *
      * @serialData The <i>capacity</i> of the HashMap (the length of the
      *             bucket array) is emitted (int), followed by the
@@ -1126,6 +1162,7 @@ public class HashMap<K,V>
      *             mappings), followed by the key (Object) and value (Object)
      *             for each key-value mapping.  The key-value mappings are
      *             emitted in no particular order.
+     *   在hashmap转换为流的过程中，（不知道怎么理解了，我理解为保证完整统一性）
      */
     private void writeObject(java.io.ObjectOutputStream s)
         throws IOException
@@ -1134,7 +1171,7 @@ public class HashMap<K,V>
             (size > 0) ? entrySet0().iterator() : null;
 
         // Write out the threshold, loadfactor, and any hidden stuff
-        s.defaultWriteObject();
+        s.defaultWriteObject();	//写入当前类的非静态和非瞬态（没有被transient修饰）字段到流
 
         // Write out number of buckets
         s.writeInt(table.length);
@@ -1143,7 +1180,7 @@ public class HashMap<K,V>
         s.writeInt(size);
 
         // Write out keys and values (alternating)
-        if (size > 0) {
+        if (size > 0) {	//如果存在键值对，我们把键、值对分别取出来，写到流中
             for(Map.Entry<K,V> e : entrySet0()) {
                 s.writeObject(e.getKey());
                 s.writeObject(e.getValue());
@@ -1156,6 +1193,7 @@ public class HashMap<K,V>
     /**
      * Reconstitute the {@code HashMap} instance from a stream (i.e.,
      * deserialize it).
+     * 将序列化流，重组成HashMap  各种操作慢慢看。。。
      */
     private void readObject(java.io.ObjectInputStream s)
          throws IOException, ClassNotFoundException
