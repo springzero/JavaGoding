@@ -7,7 +7,6 @@ import java.util.Collection;
 import java.util.Properties;
 
 /**
- * @author springzero E-mail: 464150147@qq.com
  * @version 创建时间：2016年1月6日 下午9:47:56
  * 类说明
  */

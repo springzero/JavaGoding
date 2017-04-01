@@ -1,6 +1,5 @@
 package com.springzero.factory;
 /**
- * @author springzero E-mail: 464150147@qq.com
  * @version 创建时间：2016年1月6日 下午10:12:36
  * 类说明
  */

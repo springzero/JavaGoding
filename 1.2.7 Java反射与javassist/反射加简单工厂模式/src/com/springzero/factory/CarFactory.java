@@ -1,6 +1,5 @@
 package com.springzero.factory;
 /**
- * @author springzero E-mail: 464150147@qq.com
  * @version 创建时间：2016年1月6日 下午10:10:45
  * 类说明		生产汽车的工厂
  */
